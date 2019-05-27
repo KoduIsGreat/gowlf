@@ -91,7 +91,7 @@ func newNetwork(db *sql.DB, rootId int) (*Graph, error) {
 
 	rootVertex, ok := vertexMap[rootId]
 	if !ok {
-		return nil, fmt.Errorf("Catchment %s does not exist", rootId)
+		return nil, fmt.Errorf("Catchment %d does not exist", rootId)
 	}
 
 	return &Graph{vertices: vertices, root: rootVertex}, nil
