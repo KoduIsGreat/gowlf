@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"sort"
+	"strings"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -13,7 +15,9 @@ func TestPrint(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	defer db.Close()
-	query := "SELECT distinct fromcomid, tocomid FROM catchment_navigation INNER JOIN catchments ON catchments.comid = catchment_navigation.fromcomid or catchments.comid = catchment_navigation.tocomid;"
+	query := "SELECT distinct fromcomid, tocomid FROM catchment_navigation" +
+		" INNER JOIN catchments ON catchments.comid = catchment_navigation.fromcomid" +
+		" or catchments.comid = catchment_navigation.tocomid;"
 	columns := []string{"fromcomid", "tocomid"}
 	in := `0,307562200
 0,307578700
@@ -45,9 +49,16 @@ func TestPrint(t *testing.T) {
 		t.Fatalf("unexpected error %s while printing graph", err)
 	}
 
-	got := out.String()
+	got := sortByNewLine(out.String())
+	want = sortByNewLine(want)
 	if got != want {
 		t.Fatalf("Test failed: \n got %s \n\n want %s", got, want)
 	}
 
+}
+
+func sortByNewLine(s string) string {
+	sa := strings.Split(s, "\n")
+	sort.Strings(sa)
+	return strings.Join(sa, "\n")
 }
