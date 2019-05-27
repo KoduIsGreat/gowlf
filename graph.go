@@ -8,13 +8,13 @@ import (
 )
 
 type Graph struct {
-	root		*Vertex
-	vertices 	map[int]bool
+	root     *Vertex
+	vertices map[int]bool
 }
 
 type Vertex struct {
-	id 		int
-	edges   map[int]*Vertex
+	id    int
+	edges map[int]*Vertex
 }
 
 type PathTraversed struct {
@@ -22,16 +22,15 @@ type PathTraversed struct {
 	from *Vertex
 }
 
-
 func newVertex(id int) *Vertex {
 	return &Vertex{id: id, edges: map[int]*Vertex{}}
 }
 
 func (g *Graph) print(out io.Writer) error {
-	return  g.printDfs(out, map[int]bool{}, g.root)
+	return g.printDfs(out, map[int]bool{}, g.root)
 }
 
-func (g *Graph) printDfs(out io.Writer, visited map[int]bool, cursor *Vertex) error{
+func (g *Graph) printDfs(out io.Writer, visited map[int]bool, cursor *Vertex) error {
 	if visited[cursor.id] {
 		return nil // stop
 	}
@@ -49,16 +48,15 @@ func (g *Graph) printDfs(out io.Writer, visited map[int]bool, cursor *Vertex) er
 	return nil
 }
 
-
 func newGraph(db *sql.DB) (*Graph, error) {
 	return newNetwork(db, 0)
 }
 
-func newNetwork(db *sql.DB, rootId int ) (*Graph, error) {
-	vertexMap :=  map[int]*Vertex{}
+func newNetwork(db *sql.DB, rootId int) (*Graph, error) {
+	vertexMap := map[int]*Vertex{}
 	var (
 		from int
-		to int
+		to   int
 	)
 
 	rows, err := db.Query("SELECT distinct fromcomid, tocomid FROM catchment_navigation INNER JOIN catchments ON catchments.comid = catchment_navigation.fromcomid or catchments.comid = catchment_navigation.tocomid;")
@@ -91,7 +89,7 @@ func newNetwork(db *sql.DB, rootId int ) (*Graph, error) {
 		vertices[k] = true
 	}
 
-	rootVertex, ok :=vertexMap[rootId]
+	rootVertex, ok := vertexMap[rootId]
 	if !ok {
 		return nil, fmt.Errorf("Catchment %s does not exist", rootId)
 	}

@@ -5,12 +5,14 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"os"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
-var dbPath = flag.String("db","", "Path to database e.g : --db ./path/to/my/db.sqlite")
+var dbPath = flag.String("db", "", "Path to database e.g : --db ./path/to/my/db.sqlite")
+
 func main() {
 
 	flag.Usage = func() {
@@ -18,7 +20,7 @@ func main() {
 	}
 	flag.Parse()
 	var out bytes.Buffer
-	if *dbPath =="" {
+	if *dbPath == "" {
 		log.Fatal(fmt.Errorf("--db must be set"))
 	}
 
@@ -36,7 +38,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err:= catchmentNetwork.print(&out); err !=nil{
+	if err := catchmentNetwork.print(&out); err != nil {
 		log.Fatal(err)
 	}
 
@@ -48,5 +50,3 @@ func main() {
 		log.Fatal(err)
 	}
 }
-
-
