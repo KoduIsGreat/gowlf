@@ -31,7 +31,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if _, err := out.Write([]byte("digraph gomodgraph {\n")); err != nil {
+	if _, err := out.Write([]byte("digraph network {\n")); err != nil {
 		log.Fatal(err)
 	}
 
