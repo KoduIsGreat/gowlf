@@ -179,7 +179,16 @@ func TestTo(t *testing.T){
 `,
 		},
 		{
-			name: "Cycles",
+			name: "CyclesBasic",
+			to: 2,
+			in: `0,1
+1,2
+2,1
+`,
+			want:`	1 -> 2`,
+		},
+		{
+			name: "CyclesWithSplit",
 			to: 3,
 			in: `0,1
 1,2
@@ -217,6 +226,76 @@ func TestTo(t *testing.T){
 	6 -> 7
 `,
 		},
+		{
+			name: "TwoSplitsMidpoint",
+			to: 4,
+			in:`0,1
+1,2
+1,3
+2,4
+3,4
+4,5
+4,6
+6,7
+5,7
+7,8
+`,
+			want:`	1 -> 2
+	2 -> 4
+	1 -> 3
+	3 -> 4
+`,
+		},
+		{
+			name: "TwoSplitsLeaf",
+			to: 5,
+			in:`0,1
+1,2
+1,3
+2,4
+3,4
+4,5
+4,6
+6,7
+5,7
+7,8
+`,
+			want:`	1 -> 2
+	2 -> 4
+	4 -> 5
+	1 -> 3
+	3 -> 4
+`,
+		},
+		{
+			name: "TwoSplitsGap",
+			to: 10,
+			in:`0,1
+1,2
+1,3
+2,4
+3,4
+4,5
+5,6
+5,7
+6,8
+7,9
+8,10
+9,10
+`,
+			want:`	1 -> 2
+	2 -> 4
+	4 -> 5
+	5 -> 6
+	6 -> 8
+	8 -> 10
+	1 -> 3
+	3 -> 4
+	5 -> 7
+	7 -> 9
+	9 -> 10
+`,
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			db,  err := mockQuery([]string{"fromcomid", "tocomid"},query,tc.in)
@@ -231,9 +310,13 @@ func TestTo(t *testing.T){
 				t.Fatalf("unexpected error %s while creating graph", err)
 			}
 
-			subCatchments := catchments.To(tc.to)
-			if err := subCatchments.print(&out); err != nil {
-				t.Fatalf("unexpected error %s while printing graph", err)
+			subCatchments, err := catchments.To(tc.to)
+			if err  != nil{
+				t.Fatalf("unexpected error while building sub graph: %s", err)
+			}
+
+			if err := subCatchments.PrintTo(&out, tc.to); err != nil {
+				t.Fatalf("unexpected error while printing graph %s", err)
 			}
 
 			got := sortByNewLine(out.String())
