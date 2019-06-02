@@ -17,8 +17,14 @@ type Vertex struct {
 }
 
 type PathTraversed struct {
-	current *Vertex
-	from *Vertex
+	*Vertex
+	from *PathTraversed
+	seen map[int]bool
+}
+
+type Needle struct{
+	id int
+	paths []*PathTraversed
 }
 
 func newVertex(id int) *Vertex {
@@ -29,6 +35,15 @@ func (g *Graph) print(out io.Writer) error {
 	return g.printDfs(out, map[int]bool{}, g.root)
 }
 
+func (p* PathTraversed) isNeighbor(needle int) bool{
+	for _, edge := range p.edges {
+		fmt.Printf("is node %d a neighbor of %d? edge: %d\n",p.id, needle, edge.id)
+		if edge.id == needle {
+			return true
+		}
+	}
+	return false
+}
 func (g *Graph) printDfs(out io.Writer, visited map[int]bool, cursor *Vertex) error {
 	if visited[cursor.id] {
 		return nil // stop
@@ -49,20 +64,34 @@ func (g *Graph) printDfs(out io.Writer, visited map[int]bool, cursor *Vertex) er
 	return nil
 }
 
-//func (g *Graph) to(visited, vertices map[int]bool,path PathTraversed, needle int, cursor *Vertex) *Graph {
-//	if visited[cursor.id]{
-//		return nil
-//	}
-//	visited[cursor.id] = true
-//	if cursor.id == needle {
-//
-//	}
-//	for _, edge := range cursor.edges {
-//		path.current = edge
-//		path.from = cursor
-//		g.to(visited,vertices,path,needle,edge)
-//	}
-//}
+func (g *Graph) To(needle int) *Graph {
+	newVertices := map[int]bool{}
+	need := &Needle{id: needle, paths: []*PathTraversed{}}
+	g.toDfs(map[int]bool{}, &PathTraversed{Vertex: g.root},need)
+	for _, path := range need.paths {
+		for path.from != nil {
+			newVertices[path.id] = true
+			path = path.from
+		}
+	}
+	return &Graph{root: g.root, vertices: newVertices}
+}
+
+func (g *Graph) toDfs(visited map[int]bool,cursor *PathTraversed, needle *Needle) {
+	if visited[cursor.id]{
+		return
+	}
+	visited[cursor.id] = true
+	if cursor.id == needle.id{
+		needle.paths = append(needle.paths, cursor)
+	} else {
+		for _, edge := range cursor.edges {
+			g.toDfs(visited,&PathTraversed{Vertex: edge, from: cursor},needle)
+		}
+	}
+	visited[cursor.id] = false
+	return
+}
 func newGraph(db *sql.DB) (*Graph, error) {
 	return newNetwork(db, 0)
 }
