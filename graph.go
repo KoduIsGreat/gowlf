@@ -22,8 +22,8 @@ type PathTraversed struct {
 	seen map[int]bool
 }
 
-type Needle struct{
-	id int
+type Needle struct {
+	id    int
 	paths []*PathTraversed
 }
 
@@ -36,7 +36,7 @@ func (g *Graph) print(out io.Writer) error {
 }
 
 func (g *Graph) PrintTo(out io.Writer, needle int) error {
-	return g.printToDfs(out,map[int]bool{},g.root, needle)
+	return g.printToDfs(out, map[int]bool{}, g.root, needle)
 }
 func (g *Graph) printDfs(out io.Writer, visited map[int]bool, cursor *Vertex) error {
 	if visited[cursor.id] {
@@ -44,7 +44,7 @@ func (g *Graph) printDfs(out io.Writer, visited map[int]bool, cursor *Vertex) er
 	}
 	visited[cursor.id] = true
 	for _, edge := range cursor.edges {
-		if g.vertices[edge.id]{
+		if g.vertices[edge.id] {
 			if cursor.id != 0 { // ignore root node 0 as its not a real node.
 				if _, err := fmt.Fprintf(out, "\t%d -> %d\n", cursor.id, edge.id); err != nil {
 					return err
@@ -64,13 +64,14 @@ func (g *Graph) printToDfs(out io.Writer, visited map[int]bool, cursor *Vertex, 
 	}
 	visited[cursor.id] = true
 	for _, edge := range cursor.edges {
-		if g.vertices[edge.id]{
+		if g.vertices[edge.id] {
 			if cursor.id != 0 && cursor.id != needle { // ignore root node 0 as its not a real node. ignore if we are at the needle.
 				if _, err := fmt.Fprintf(out, "\t%d -> %d\n", cursor.id, edge.id); err != nil {
 					return err
 				}
 			}
-			if err := g.printDfs(out, visited, edge); err != nil {
+
+			if err := g.printToDfs(out, visited, edge, needle); err != nil {
 				return err
 			}
 		}
@@ -94,16 +95,16 @@ func (g *Graph) To(needle int) (*Graph, error) {
 	return &Graph{root: g.root, vertices: newVertices}, nil
 }
 
-func (g *Graph) toDfs(visited map[int]bool,cursor *PathTraversed, needle *Needle) {
-	if visited[cursor.id]{
+func (g *Graph) toDfs(visited map[int]bool, cursor *PathTraversed, needle *Needle) {
+	if visited[cursor.id] {
 		return
 	}
 	visited[cursor.id] = true
-	if cursor.id == needle.id{
+	if cursor.id == needle.id {
 		needle.paths = append(needle.paths, cursor)
 	} else {
 		for _, edge := range cursor.edges {
-			g.toDfs(visited,&PathTraversed{Vertex: edge, from: cursor},needle)
+			g.toDfs(visited, &PathTraversed{Vertex: edge, from: cursor}, needle)
 		}
 	}
 	visited[cursor.id] = false
@@ -127,7 +128,7 @@ func newNetwork(db *sql.DB, rootId int) (*Graph, error) {
 	}
 	for rows.Next() {
 		if err := rows.Scan(&from, &to); err != nil {
-			return nil, fmt.Errorf("error reading row: %s",err)
+			return nil, fmt.Errorf("error reading row: %s", err)
 		}
 
 		v, ok := vertexMap[from]

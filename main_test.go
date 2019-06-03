@@ -16,24 +16,24 @@ var query = "SELECT distinct fromcomid, tocomid FROM catchment_navigation" +
 var badQuery = "a very bad query"
 
 func TestPrint(t *testing.T) {
-	for _, tc := range []struct{
-		name 	string
-		in		string
-		want	string
+	for _, tc := range []struct {
+		name string
+		in   string
+		want string
 	}{
 		{
 			name: "Basic",
-			in:`0,1
+			in: `0,1
 1,2
 2,3
 `,
-			want:`	1 -> 2
+			want: `	1 -> 2
 	2 -> 3
 `,
 		},
 		{
 			name: "TwoPaths",
-			in:`0,1
+			in: `0,1
 1,3
 3,5
 5,6
@@ -41,7 +41,7 @@ func TestPrint(t *testing.T) {
 2,4
 4,6
 `,
-			want:`	1 -> 3
+			want: `	1 -> 3
 	3 -> 5
 	5 -> 6
 	2 -> 4
@@ -50,11 +50,11 @@ func TestPrint(t *testing.T) {
 		},
 		{
 			name: "Cycles",
-			in:`0,1
+			in: `0,1
 1,2
 2,1
 `,
-			want:`	1 -> 2
+			want: `	1 -> 2
 	2 -> 1
 `,
 		},
@@ -73,7 +73,7 @@ func TestPrint(t *testing.T) {
 307586800,307592300
 307601400,307586800
 `,
-			want:`	307578700 -> 307586600
+			want: `	307578700 -> 307586600
 	307586600 -> 307586700
 	307586700 -> 307586800
 	307586800 -> 307592300
@@ -83,7 +83,7 @@ func TestPrint(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			db,  err := mockQuery([]string{"fromcomid", "tocomid"},query,tc.in)
+			db, err := mockQuery([]string{"fromcomid", "tocomid"}, query, tc.in)
 			if err != nil {
 				t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 			}
@@ -108,103 +108,103 @@ func TestPrint(t *testing.T) {
 	}
 }
 
-func TestNewGraph(t *testing.T){
-	for _, tc :=range []struct{
-		name 	string
-		query 	*string
-		err 	string
+func TestNewGraph(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		query   *string
+		err     string
 		columns []string
-		in 		string
-	} {
+		in      string
+	}{
 		{
-			name: "NoRoot",
-			query: &query,
-			err: "root %d does not exist",
-			columns: []string{"fromcomid","tcomid"},
+			name:    "NoRoot",
+			query:   &query,
+			err:     "root %d does not exist",
+			columns: []string{"fromcomid", "tcomid"},
 			in: `1,2
 2,1
 `,
 		},
 		{
-			name: "BadRowType",
-			query: &query,
-			err: "error reading row",
-			columns: []string{"fromcomid","tocomid"},
-			in:`A,B
+			name:    "BadRowType",
+			query:   &query,
+			err:     "error reading row",
+			columns: []string{"fromcomid", "tocomid"},
+			in: `A,B
 C,D
 `,
 		},
 		{
-			name: "BadQuery",
-			query: &badQuery,
-			err: "error with query",
-			columns: []string{"fromcomid","tocomid"},
+			name:    "BadQuery",
+			query:   &badQuery,
+			err:     "error with query",
+			columns: []string{"fromcomid", "tocomid"},
 			in: `0,1
 1,2
 `,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			db, err := mockQuery(tc.columns,*tc.query,tc.in)
+			db, err := mockQuery(tc.columns, *tc.query, tc.in)
 			if err != nil {
 				t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 			}
 			defer db.Close()
 
 			if _, err := newGraph(db); err == nil {
-				t.Fatalf("expected but did not receive fatal error: %s",tc.err)
+				t.Fatalf("expected but did not receive fatal error: %s", tc.err)
 			}
 		})
 	}
 }
 
-func TestTo(t *testing.T){
-	for _, tc := range []struct{
-		name	string
-		to 		int
-		in 		string
-		want 	string
-
-	} {
+func TestTo(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		to   int
+		in   string
+		want string
+	}{
 		{
 			name: "Basic",
-			to: 3,
+			to:   3,
 			in: `0,1
 1,2
 2,3
 2,4
 `,
-			want:`	1 -> 2
+			want: `	1 -> 2
 	2 -> 3
 `,
 		},
 		{
 			name: "CyclesBasic",
-			to: 2,
+			to:   2,
 			in: `0,1
 1,2
 2,1
 `,
-			want:`	1 -> 2`,
+			want: `
+	1 -> 2`,
 		},
 		{
 			name: "CyclesWithSplit",
-			to: 3,
+			to:   3,
 			in: `0,1
 1,2
 2,1
 2,3
 2,4
 `,
-			want:`	1 -> 2
+			want: `	1 -> 2
 	2 -> 3
 	2 -> 1
 `,
 		},
 		{
 			name: "TwoSplits",
-			to: 8,
-			in:`0,1
+			to:   8,
+			in: `0,1
 1,2
 1,3
 2,4
@@ -215,7 +215,7 @@ func TestTo(t *testing.T){
 5,7
 7,8
 `,
-			want:`	1 -> 2
+			want: `	1 -> 2
 	2 -> 4
 	4 -> 5
 	5 -> 7
@@ -228,8 +228,8 @@ func TestTo(t *testing.T){
 		},
 		{
 			name: "TwoSplitsMidpoint",
-			to: 4,
-			in:`0,1
+			to:   4,
+			in: `0,1
 1,2
 1,3
 2,4
@@ -240,7 +240,7 @@ func TestTo(t *testing.T){
 5,7
 7,8
 `,
-			want:`	1 -> 2
+			want: `	1 -> 2
 	2 -> 4
 	1 -> 3
 	3 -> 4
@@ -248,8 +248,8 @@ func TestTo(t *testing.T){
 		},
 		{
 			name: "TwoSplitsLeaf",
-			to: 5,
-			in:`0,1
+			to:   5,
+			in: `0,1
 1,2
 1,3
 2,4
@@ -260,7 +260,7 @@ func TestTo(t *testing.T){
 5,7
 7,8
 `,
-			want:`	1 -> 2
+			want: `	1 -> 2
 	2 -> 4
 	4 -> 5
 	1 -> 3
@@ -269,8 +269,8 @@ func TestTo(t *testing.T){
 		},
 		{
 			name: "TwoSplitsGap",
-			to: 10,
-			in:`0,1
+			to:   10,
+			in: `0,1
 1,2
 1,3
 2,4
@@ -283,7 +283,7 @@ func TestTo(t *testing.T){
 8,10
 9,10
 `,
-			want:`	1 -> 2
+			want: `	1 -> 2
 	2 -> 4
 	4 -> 5
 	5 -> 6
@@ -298,7 +298,7 @@ func TestTo(t *testing.T){
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			db,  err := mockQuery([]string{"fromcomid", "tocomid"},query,tc.in)
+			db, err := mockQuery([]string{"fromcomid", "tocomid"}, query, tc.in)
 			if err != nil {
 				t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 			}
@@ -311,7 +311,7 @@ func TestTo(t *testing.T){
 			}
 
 			subCatchments, err := catchments.To(tc.to)
-			if err  != nil{
+			if err != nil {
 				t.Fatalf("unexpected error while building sub graph: %s", err)
 			}
 
@@ -334,7 +334,7 @@ func sortByNewLine(s string) string {
 	return strings.Join(sa, "\n")
 }
 
-func mockQuery(columns []string, query, rowsCsv string,) (*sql.DB, error) {
+func mockQuery(columns []string, query, rowsCsv string) (*sql.DB, error) {
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		return nil, err

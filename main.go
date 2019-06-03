@@ -5,11 +5,14 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"os"
+
+	_ "github.com/mattn/go-sqlite3"
 )
+
 var dbPath = flag.String("db", "", "Path to database e.g : --db ./path/to/my/db.sqlite")
+
 func main() {
 
 	flag.Usage = func() {
