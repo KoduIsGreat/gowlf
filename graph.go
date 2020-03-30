@@ -1,159 +1,82 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"fmt"
-	"io"
+	"strings"
 )
 
-type Graph struct {
-	root     *Vertex
-	vertices map[int]bool
-}
+// represents a unique set of catchments or comIds
+type catchSet map[int]struct{}
 
-type Vertex struct {
-	id    int
-	edges map[int]*Vertex
-}
+// Represents a catchment network which is a directed acyclic graph of watershed basins
+type network map[int]catchSet
 
-type PathTraversed struct {
-	*Vertex
-	from *PathTraversed
-	seen map[int]bool
-}
-
-type Needle struct {
-	id    int
-	paths []*PathTraversed
-}
-
-func newVertex(id int) *Vertex {
-	return &Vertex{id: id, edges: map[int]*Vertex{}}
-}
-
-func (g *Graph) print(out io.Writer) error {
-	return g.printDfs(out, map[int]bool{}, g.root)
-}
-
-func (g *Graph) PrintTo(out io.Writer, needle int) error {
-	return g.printToDfs(out, map[int]bool{}, g.root, needle)
-}
-func (g *Graph) printDfs(out io.Writer, visited map[int]bool, cursor *Vertex) error {
-	if visited[cursor.id] {
-		return nil // stop
+// Prints the graph in the form of textual words the first word is the ancestor node and any
+// words proceeding on the same line are its descendants
+func(n network) sprint(out *bytes.Buffer) {
+	for node, edges := range n {
+		var sb strings.Builder
+		for edge := range edges {
+			sb.WriteString(fmt.Sprintf("%d\t", edge))
+		}
+		s := fmt.Sprintf("%d\t%s\n", node, sb.String())
+		out.WriteString(s)
 	}
-	visited[cursor.id] = true
-	for _, edge := range cursor.edges {
-		if g.vertices[edge.id] {
-			if cursor.id != 0 { // ignore root node 0 as its not a real node.
-				if _, err := fmt.Fprintf(out, "\t%d -> %d\n", cursor.id, edge.id); err != nil {
-					return err
-				}
-			}
-			if err := g.printDfs(out, visited, edge); err != nil {
-				return err
-			}
+}
+
+// Adds a node to the network
+func (n network) addNode(node int) catchSet {
+	edges := n[node]
+	if edges == nil {
+		edges = make(catchSet)
+		n[node] =edges
+	}
+	return edges
+}
+
+// Adds an edge to the network, if the from node doesn't exist in the network, it is added
+func (n network) addEdges(from int, tos ...int)  {
+	edges := n.addNode(from)
+	for _, to := range tos {
+		n.addNode(to)
+		edges[to] = struct{}{}
+	}
+}
+
+func (n network) transpose() network {
+	rev := make(network)
+	for node, edges := range n {
+		rev.addNode(node)
+		for succ := range edges {
+			rev.addEdges(succ, node)
 		}
 	}
-	return nil
+	return rev
 }
 
-func (g *Graph) printToDfs(out io.Writer, visited map[int]bool, cursor *Vertex, needle int) error {
-	if visited[cursor.id] {
-		return nil // stop
-	}
-	visited[cursor.id] = true
-	for _, edge := range cursor.edges {
-		if g.vertices[edge.id] {
-			if cursor.id != 0 && cursor.id != needle { // ignore root node 0 as its not a real node. ignore if we are at the needle.
-				if _, err := fmt.Fprintf(out, "\t%d -> %d\n", cursor.id, edge.id); err != nil {
-					return err
-				}
-			}
 
-			if err := g.printToDfs(out, visited, edge, needle); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func (g *Graph) To(needle int) (*Graph, error) {
-	if _, ok := g.vertices[needle]; !ok {
-		return nil, fmt.Errorf("%d does not exist in this graph", needle)
-	}
-	newVertices := map[int]bool{}
-	end := &Needle{id: needle, paths: []*PathTraversed{}}
-	g.toDfs(map[int]bool{}, &PathTraversed{Vertex: g.root}, end)
-	for _, path := range end.paths {
-		for path.from != nil {
-			newVertices[path.id] = true
-			path = path.from
-		}
-	}
-	return &Graph{root: g.root, vertices: newVertices}, nil
-}
-
-func (g *Graph) toDfs(visited map[int]bool, cursor *PathTraversed, needle *Needle) {
-	if visited[cursor.id] {
-		return
-	}
-	visited[cursor.id] = true
-	if cursor.id == needle.id {
-		needle.paths = append(needle.paths, cursor)
-	} else {
-		for _, edge := range cursor.edges {
-			g.toDfs(visited, &PathTraversed{Vertex: edge, from: cursor}, needle)
-		}
-	}
-	visited[cursor.id] = false
-	return
-}
-
-func newGraph(db *sql.DB) (*Graph, error) {
-	return newNetwork(db, 0)
-}
-
-func newNetwork(db *sql.DB, rootId int) (*Graph, error) {
-	vertexMap := map[int]*Vertex{}
+// creates a network from a *sql.DB provided a query
+func fromDB(db *sql.DB, q string) (network, error) {
+	network := make(network)
 	var (
 		from int
 		to   int
 	)
-
-	rows, err := db.Query("SELECT distinct fromcomid, tocomid FROM catchment_navigation INNER JOIN catchments ON catchments.comid = catchment_navigation.fromcomid or catchments.comid = catchment_navigation.tocomid;")
+	rows, err := db.Query(q)
 	if err != nil {
-		return nil, fmt.Errorf("error with query: %s", err)
+		return nil, fmt.Errorf("error with query: %w", err)
 	}
 	for rows.Next() {
 		if err := rows.Scan(&from, &to); err != nil {
-			return nil, fmt.Errorf("error reading row: %s", err)
+			return nil, fmt.Errorf("error reading row: %w", err)
 		}
-
-		v, ok := vertexMap[from]
-		if !ok {
-			v = newVertex(from)
-			vertexMap[v.id] = v
-		}
-
-		u, ok := vertexMap[to]
-		if !ok {
-			u = newVertex(to)
-			vertexMap[u.id] = u
-		}
-		v.edges[u.id] = u
-
+		network.addEdges(from, to)
 	}
-	vertices := map[int]bool{}
-	for k := range vertexMap {
-		vertices[k] = true
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error: %w", err)
 	}
-
-	rootVertex, ok := vertexMap[rootId]
-	if !ok {
-		return nil, fmt.Errorf("root %d does not exist", rootId)
-	}
-
-	return &Graph{vertices: vertices, root: rootVertex}, nil
+	return network, nil
 }
+
