@@ -23,9 +23,8 @@ func TestPrint(t *testing.T) {
 	}{
 		{
 			name: "Simple",
-			in: `0,1`,
-			want: `0	1
-1	`,
+			in:   `0,1`,
+			want: "0 1\n1\n",
 		},
 		{
 			name: "Basic",
@@ -33,10 +32,7 @@ func TestPrint(t *testing.T) {
 1,2
 2,3
 `,
-			want: `0	1
-1	2  
-2	3  
-3	`,
+			want: "\n0 1\n1 2\n2 3\n3",
 		},
 		{
 			name: "TwoPaths",
@@ -48,12 +44,7 @@ func TestPrint(t *testing.T) {
 2,4
 4,6
 `,
-			want: `	1 -> 3
-	3 -> 5
-	5 -> 6
-	2 -> 4
-	4 -> 6
-`,
+			want: "\n0 1 2\n1 3\n2 4\n3 5\n4 6\n5 6\n6",
 		},
 		{
 			name: "Cycles",
@@ -61,32 +52,7 @@ func TestPrint(t *testing.T) {
 1,2
 2,1
 `,
-			want: `	1 -> 2
-	2 -> 1
-`,
-		},
-		{
-			name: "RealisticExample_UnaBasin",
-			in: `0,307562200
-0,307578700
-0,307601400
-0,307635600
-0,307668700
-0,307676500
-307562200,307586600
-307578700,307586600
-307586600,307586700
-307586700,307586800
-307586800,307592300
-307601400,307586800
-`,
-			want: `	307578700 -> 307586600
-	307586600 -> 307586700
-	307586700 -> 307586800
-	307586800 -> 307592300
-	307601400 -> 307586800
-	307562200 -> 307586600
-`,
+			want: "0 1\n1 2\n2 1\n",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -106,7 +72,7 @@ func TestPrint(t *testing.T) {
 			got := sortByNewLine(out.String())
 			want := sortByNewLine(tc.want)
 			if got != want {
-				t.Fatalf("Test failed: \n got %s \n\n want %s", got, want)
+				t.Fatalf("Test failed: \n got %s\n\n want %s", got, want)
 			}
 		})
 	}
@@ -120,15 +86,6 @@ func TestNewGraph(t *testing.T) {
 		columns []string
 		in      string
 	}{
-		{
-			name:    "NoRoot",
-			query:   &query,
-			err:     "root %d does not exist",
-			columns: []string{"fromcomid", "tcomid"},
-			in: `1,2
-2,1
-`,
-		},
 		{
 			name:    "BadRowType",
 			query:   &query,
@@ -162,175 +119,144 @@ C,D
 	}
 }
 
-//func TestTo(t *testing.T) {
-//	for _, tc := range []struct {
-//		name string
-//		to   int
-//		in   string
-//		want string
-//	}{
-//		{
-//			name: "Basic",
-//			to:   3,
-//			in: `0,1
-//1,2
-//2,3
-//2,4
-//`,
-//			want: `	1 -> 2
-//	2 -> 3
-//`,
-//		},
-//		{
-//			name: "CyclesBasic",
-//			to:   2,
-//			in: `0,1
-//1,2
-//2,1
-//`,
-//			want: `
-//	1 -> 2`,
-//		},
-//		{
-//			name: "CyclesWithSplit",
-//			to:   3,
-//			in: `0,1
-//1,2
-//2,1
-//2,3
-//2,4
-//`,
-//			want: `	1 -> 2
-//	2 -> 3
-//	2 -> 1
-//`,
-//		},
-//		{
-//			name: "TwoSplits",
-//			to:   8,
-//			in: `0,1
-//1,2
-//1,3
-//2,4
-//3,4
-//4,5
-//4,6
-//6,7
-//5,7
-//7,8
-//`,
-//			want: `	1 -> 2
-//	2 -> 4
-//	4 -> 5
-//	5 -> 7
-//	7 -> 8
-//	1 -> 3
-//	3 -> 4
-//	4 -> 6
-//	6 -> 7
-//`,
-//		},
-//		{
-//			name: "TwoSplitsMidpoint",
-//			to:   4,
-//			in: `0,1
-//1,2
-//1,3
-//2,4
-//3,4
-//4,5
-//4,6
-//6,7
-//5,7
-//7,8
-//`,
-//			want: `	1 -> 2
-//	2 -> 4
-//	1 -> 3
-//	3 -> 4
-//`,
-//		},
-//		{
-//			name: "TwoSplitsLeaf",
-//			to:   5,
-//			in: `0,1
-//1,2
-//1,3
-//2,4
-//3,4
-//4,5
-//4,6
-//6,7
-//5,7
-//7,8
-//`,
-//			want: `	1 -> 2
-//	2 -> 4
-//	4 -> 5
-//	1 -> 3
-//	3 -> 4
-//`,
-//		},
-//		{
-//			name: "TwoSplitsGap",
-//			to:   10,
-//			in: `0,1
-//1,2
-//1,3
-//2,4
-//3,4
-//4,5
-//5,6
-//5,7
-//6,8
-//7,9
-//8,10
-//9,10
-//`,
-//			want: `	1 -> 2
-//	2 -> 4
-//	4 -> 5
-//	5 -> 6
-//	6 -> 8
-//	8 -> 10
-//	1 -> 3
-//	3 -> 4
-//	5 -> 7
-//	7 -> 9
-//	9 -> 10
-//`,
-//		},
-//	} {
-//		t.Run(tc.name, func(t *testing.T) {
-//			db, err := mockQuery([]string{"fromcomid", "tocomid"}, query, tc.in)
-//			if err != nil {
-//				t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-//			}
-//			defer db.Close()
-//
-//			out := bytes.Buffer{}
-//			catchments, err := fromDB(db, tq)
-//			if err != nil {
-//				t.Fatalf("unexpected error %s while creating graph", err)
-//			}
-//
-//			subCatchments, err := catchments.To(tc.to)
-//			if err != nil {
-//				t.Fatalf("unexpected error while building sub graph: %s", err)
-//			}
-//
-//			if err := subCatchments.PrintTo(&out, tc.to); err != nil {
-//				t.Fatalf("unexpected error while printing graph %s", err)
-//			}
-//
-//			got := sortByNewLine(out.String())
-//			want := sortByNewLine(tc.want)
-//			if got != want {
-//				t.Fatalf("Test failed: \n got %s \n\n want %s", got, want)
-//			}
-//		})
-//	}
-//}
+func TestSubNetwork(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		to   int
+		in   string
+		want string
+	}{
+		{
+			name: "Basic",
+			to:   3,
+			in: `0,1
+1,2
+2,3
+2,4
+`,
+			want:"\n0 1\n1 2\n2 3\n3",
+		},
+		{
+			name: "CyclesBasic",
+			to:   2,
+			in: `0,1
+1,2
+2,1
+`,
+			want: "0 1\n1 2\n2 1\n",
+		},
+		{
+			name: "CyclesWithSplit",
+			to:   3,
+			in: `0,1
+1,2
+2,1
+2,3
+2,4
+`,
+			want: "0 1\n1 2\n2 1 3\n3\n|0 1\n1 2\n2 3 1\n3",
+		},
+		{
+			name: "TwoSplits",
+			to:   8,
+			in: `0,1
+1,2
+1,3
+2,4
+3,4
+4,5
+4,6
+6,7
+5,7
+7,8
+`,
+			want: "0 1\n1 2 3\n2 4\n3 4\n4 5 6\n5 7\n6 7\n7 8\n8|0 1\n1 3 2\n2 4\n3 4\n4 5 6\n5 7\n6 7\n7 8\n8|0 1\n1 2 3\n2 4\n3 4\n4 6 5\n5 7\n6 7\n7 8\n8|0 1\n1 3 2\n2 4\n3 4\n4 5 6\n5 7\n6 7\n7 8\n8",
+		},
+		{
+			name: "TwoSplitsMidpoint",
+			to:   4,
+			in: `0,1
+1,2
+1,3
+2,4
+3,4
+4,5
+4,6
+6,7
+5,7
+7,8
+`,
+			want: "0 1\n1 2 3\n2 4\n3 4\n4|0 1\n1 3 2\n2 4\n3 4\n4",
+		},
+		{
+			name: "TwoSplitsLeaf",
+			to:   5,
+			in: `0,1
+1,2
+1,3
+2,4
+3,4
+4,5
+4,6
+6,7
+5,7
+7,8
+`,
+			want: "0 1\n1 2 3\n2 4\n3 4\n4 5\n5|0 1\n1 3 2\n2 4\n3 4\n4 5\n5",
+		},
+		{
+			name: "TwoSplitsGap",
+			to:   10,
+			in: `0,1
+1,2
+1,3
+2,4
+3,4
+4,5
+5,6
+5,7
+6,8
+7,9
+8,10
+9,10
+`,
+			want: "0 1\n1 2 3\n2 4\n3 4\n4 5\n5 6 7\n6 8\n7 9\n8 10\n9 10\n10|"+
+				"0 1\n1 2 3\n2 4\n3 4\n4 5\n5 7 6\n6 8\n7 9\n8 10\n9 10\n10|"+
+				"0 1\n1 3 2\n2 4\n3 4\n4 5\n5 6 7\n6 8\n7 9\n8 10\n9 10\n10|"+
+				"0 1\n1 3 2\n2 4\n3 4\n4 5\n5 7 6\n6 8\n7 9\n8 10\n9 10\n10",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			db, err := mockQuery([]string{"fromcomid", "tocomid"}, query, tc.in)
+			if err != nil {
+				t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+			}
+			defer db.Close()
+
+			out := bytes.Buffer{}
+			catchments, err := fromDB(db, tq)
+			if err != nil {
+				t.Fatalf("unexpected error %s while creating graph", err)
+			}
+			subCatchments := catchments.subNetwork(tc.to)
+			subCatchments.sprint(&out)
+			got := sortByNewLine(out.String())
+			want := sortByNewLine(tc.want)
+			if strings.Contains(want, "|"){
+				split := strings.Split(want, "|")
+				var oneMatch bool
+				for _, want := range split {
+					oneMatch = got == want
+				}
+				if oneMatch {
+					t.Fatalf("Test failed: \n got %s \n\n want %s", got, want)
+				}
+			} else if got != want {
+				t.Fatalf("Test failed: \n got %s \n\n want %s", got, want)
+			}
+		})
+	}
+}
 
 func sortByNewLine(s string) string {
 	sa := strings.Split(s, "\n")

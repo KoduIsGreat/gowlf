@@ -15,15 +15,19 @@ type network map[int]catchSet
 
 // Prints the graph in the form of textual words the first word is the ancestor node and any
 // words proceeding on the same line are its descendants
-func(n network) sprint(out *bytes.Buffer) {
+func (n network) sprint(out *bytes.Buffer) {
+	var sb strings.Builder
 	for node, edges := range n {
-		var sb strings.Builder
+		var sb2 strings.Builder
+		sb2.WriteString(fmt.Sprintf("%d", node))
 		for edge := range edges {
-			sb.WriteString(fmt.Sprintf("%d\t", edge))
+			sb2.WriteString(fmt.Sprintf(" %d", edge))
 		}
-		s := fmt.Sprintf("%d\t%s\n", node, sb.String())
-		out.WriteString(s)
+		sb2.WriteString("\n")
+		s := sb2.String()
+		sb.WriteString(s)
 	}
+	out.WriteString(sb.String())
 }
 
 // Adds a node to the network
@@ -31,13 +35,13 @@ func (n network) addNode(node int) catchSet {
 	edges := n[node]
 	if edges == nil {
 		edges = make(catchSet)
-		n[node] =edges
+		n[node] = edges
 	}
 	return edges
 }
 
 // Adds an edge to the network, if the from node doesn't exist in the network, it is added
-func (n network) addEdges(from int, tos ...int)  {
+func (n network) addEdges(from int, tos ...int) {
 	edges := n.addNode(from)
 	for _, to := range tos {
 		n.addNode(to)
@@ -56,18 +60,39 @@ func (n network) transpose() network {
 	return rev
 }
 
+// produces a subnetwork given an input node
+func (n network) subNetwork(node int) network {
+	sub := make(network)
+	seen := make(catchSet)
+	q := make([]int, 0)
+	q = append(q, node)
+	t := n.transpose()
+	visit := func(node int) {
+		if _, ok := seen[node]; !ok {
+			for edge := range t[node] {
+				sub.addEdges(node, edge)
+				q = append(q, edge)
+			}
+			seen[node] = struct{}{}
+		}
+	}
+	for len(q) > 0 {
+		node := q[0]
+		q = q[1:]
+		visit(node)
+	}
+	return sub.transpose()
+}
 
 // creates a network from a *sql.DB provided a query
 func fromDB(db *sql.DB, q string) (network, error) {
 	network := make(network)
-	var (
-		from int
-		to   int
-	)
+	var from, to int
 	rows, err := db.Query(q)
 	if err != nil {
 		return nil, fmt.Errorf("error with query: %w", err)
 	}
+	defer rows.Close()
 	for rows.Next() {
 		if err := rows.Scan(&from, &to); err != nil {
 			return nil, fmt.Errorf("error reading row: %w", err)
@@ -79,4 +104,3 @@ func fromDB(db *sql.DB, q string) (network, error) {
 	}
 	return network, nil
 }
-

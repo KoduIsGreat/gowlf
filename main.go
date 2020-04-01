@@ -13,6 +13,7 @@ import (
 
 var dbPath = flag.String("db", "./db/una.sqlite", "Path to database e.g : --db ./path/to/my/db.sqlite")
 var query = "SELECT distinct fromcomid, tocomid FROM catchment_navigation INNER JOIN catchments ON catchments.comid = catchment_navigation.fromcomid or catchments.comid = catchment_navigation.tocomid;"
+
 func main() {
 
 	flag.Usage = func() {
