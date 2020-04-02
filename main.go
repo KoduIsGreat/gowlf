@@ -12,8 +12,8 @@ import (
 )
 
 var dbPath = flag.String("db", "./db/una.sqlite", "Path to database e.g : --db ./path/to/my/db.sqlite")
-var query = "SELECT distinct fromcomid, tocomid FROM catchment_navigation INNER JOIN catchments ON catchments.comid = catchment_navigation.fromcomid or catchments.comid = catchment_navigation.tocomid;"
-
+var query = flag.String("q","SELECT fromcomid, tocomid FROM catchment_navigation;","a SQL query that returns an adjacency list")
+var allpaths = flag.Int("ap", -1, "display all paths to the given node")
 func main() {
 
 	flag.Usage = func() {
@@ -30,12 +30,14 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
-	catchmentNetwork, err := fromDB(db, query)
+	catchmentNetwork, err := fromDB(db, *query)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	catchmentNetwork.sprint(&out)
+	if *allpaths > 0 {
+		catchmentNetwork = catchmentNetwork.subNetwork(*allpaths)
+	}
+	catchmentNetwork.dotprint(&out)
 
 	if _, err := out.WriteTo(os.Stdout); err != nil {
 		log.Fatal(err)

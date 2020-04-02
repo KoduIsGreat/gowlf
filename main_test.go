@@ -44,7 +44,7 @@ func TestPrint(t *testing.T) {
 2,4
 4,6
 `,
-			want: "\n0 1 2\n1 3\n2 4\n3 5\n4 6\n5 6\n6",
+			want: "\n0 1 2\n1 3\n2 4\n3 5\n4 6\n5 6\n6|\n0 2 1\n1 3\n2 4\n3 5\n4 6\n5 6\n6",
 		},
 		{
 			name: "Cycles",
@@ -71,8 +71,17 @@ func TestPrint(t *testing.T) {
 			catchments.sprint(&out)
 			got := sortByNewLine(out.String())
 			want := sortByNewLine(tc.want)
-			if got != want {
-				t.Fatalf("Test failed: \n got %s\n\n want %s", got, want)
+			if strings.Contains(want, "|"){
+				split := strings.Split(want, "|")
+				var oneMatch bool
+				for _, want := range split {
+					oneMatch = got == want
+				}
+				if oneMatch {
+					t.Fatalf("Test failed: \n got %s \n\n want %s", got, want)
+				}
+			} else if got != want {
+				t.Fatalf("Test failed: \n got %s \n\n want %s", got, want)
 			}
 		})
 	}

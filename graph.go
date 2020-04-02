@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
-	"strings"
 )
 
 // represents a unique set of catchments or comIds
@@ -16,18 +15,24 @@ type network map[int]catchSet
 // Prints the graph in the form of textual words the first word is the ancestor node and any
 // words proceeding on the same line are its descendants
 func (n network) sprint(out *bytes.Buffer) {
-	var sb strings.Builder
 	for node, edges := range n {
-		var sb2 strings.Builder
-		sb2.WriteString(fmt.Sprintf("%d", node))
+		out.WriteString(fmt.Sprintf("%d", node))
 		for edge := range edges {
-			sb2.WriteString(fmt.Sprintf(" %d", edge))
+			out.WriteString(fmt.Sprintf(" %d", edge))
 		}
-		sb2.WriteString("\n")
-		s := sb2.String()
-		sb.WriteString(s)
+		out.WriteString("\n")
 	}
-	out.WriteString(sb.String())
+}
+
+func(n network) dotprint(out *bytes.Buffer) {
+	out.WriteString(fmt.Sprint("digraph {\n"))
+	for node, edges := range n {
+		for edge := range edges{
+			e := fmt.Sprintf("\t%d -> %d\n", node, edge)
+			out.WriteString(e)
+		}
+	}
+	out.WriteString("}")
 }
 
 // Adds a node to the network
@@ -76,6 +81,7 @@ func (n network) subNetwork(node int) network {
 			seen[node] = struct{}{}
 		}
 	}
+	// while we have items in our queue continue to visit nodes
 	for len(q) > 0 {
 		node := q[0]
 		q = q[1:]
