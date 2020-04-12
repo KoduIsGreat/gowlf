@@ -22,20 +22,33 @@ func TestPrint(t *testing.T) {
 		want string
 	}{
 		{
-			name: "Simple",
-			in:   `0,1`,
+			name: "SimpleToFrom",
+			in:   `1,0`,
 			want: "0\n1 0\n",
 		},
 		{
-			name: "Basic",
-			in: `0,1
-1,2
-2,3
+			name: "SimpleFromTo",
+			in:   `0,1`,
+			want: "0 1\n1\n",
+		},
+		{
+			name: "BasicToFrom",
+			in: `1,0
+2,1
+3,2
 `,
 			want: "0\n1 0\n2 1\n3 2\n",
 		},
 		{
-			name: "TwoPaths",
+			name: "BasicFromTo",
+			in: `0,1
+1,2
+2,3
+`,
+			want: "0 1\n1 2\n2 3\n3\n",
+		},
+		{
+			name: "TwoPathsToFrom",
 			in: `0,1
 1,3
 3,5
@@ -47,7 +60,7 @@ func TestPrint(t *testing.T) {
 			want: "\n0 1 2\n1 3\n2 4\n3 5\n4 6\n5 6\n6|\n0 2 1\n1 3\n2 4\n3 5\n4 6\n5 6\n6",
 		},
 		{
-			name: "Cycles",
+			name: "CyclesToFrom",
 			in: `0,1
 1,2
 2,1
@@ -63,7 +76,7 @@ func TestPrint(t *testing.T) {
 			defer db.Close()
 
 			out := bytes.Buffer{}
-			catchments, err := toFromDb(db, tq)
+			catchments, err := fromDb(db, tq)
 
 			if err != nil {
 				t.Fatalf("unexpected error %s while creating graph", err)
@@ -121,7 +134,7 @@ C,D
 			}
 			defer db.Close()
 
-			if _, err := toFromDb(db, tq); err == nil {
+			if _, err := fromDb(db, tq); err == nil {
 				t.Fatalf("expected but did not receive fatal error: %s", tc.err)
 			}
 		})
@@ -136,7 +149,7 @@ func TestTranspose(t *testing.T) {
 	}{
 		{
 			name: "Basic",
-			in:   `0,1`,
+			in:   `1,0`,
 			want: "0 1\n1\n",
 		},
 	} {
@@ -148,7 +161,7 @@ func TestTranspose(t *testing.T) {
 			defer db.Close()
 
 			out := bytes.Buffer{}
-			catchments, err := toFromDb(db, tq)
+			catchments, err := fromDb(db, tq)
 			if err != nil {
 				t.Fatalf("unexpected error %s while creating graph", err)
 			}
@@ -180,26 +193,56 @@ func TestSubNetwork(t *testing.T) {
 		want string
 	}{
 		{
-			name: "Basic",
+			name: "BasicToFrom",
 			to:   3,
+			in: `1,0
+2,1
+3,2
+4,2
+`,
+			want: "\n0 1\n1 2\n2 3\n3",
+		},
+		{
+			name: "BasicFromTo",
+			to:   1,
 			in: `0,1
 1,2
 2,3
 2,4
 `,
-			want: "\n0 1\n1 2\n2 3\n3",
+			want: "\n1 2\n2 3 4\n|\n1 2\n2 4 3\n",
 		},
 		{
-			name: "CyclesBasic",
+			name: "CyclesBasicToFrom",
 			to:   2,
-			in: `0,1
-1,2
+			in: `1,0
 2,1
+1,2
 `,
 			want: "0 1\n1 2\n2 1\n",
 		},
 		{
-			name: "CyclesWithSplit",
+			name: "CyclesBasicFromTo",
+			to:   1,
+			in: `0,1
+1,2
+2,1
+`,
+			want: "1 2\n2 1\n",
+		},
+		{
+			name: "CyclesWithSplitToFrom",
+			to:   2,
+			in: `1,0
+2,1
+1,2
+3,2
+4,2
+`,
+			want: "2 1 3 4\n1 2\n|2 3 4 1\n1 2\n|2 4 3 1\n1 2\n|2 4 1 3\n1 2\n",
+		},
+		{
+			name: "CyclesWithSplitFromTo",
 			to:   3,
 			in: `0,1
 1,2
@@ -287,7 +330,7 @@ func TestSubNetwork(t *testing.T) {
 			defer db.Close()
 
 			out := bytes.Buffer{}
-			catchments, err := toFromDb(db, tq)
+			catchments, err := fromDb(db, tq)
 			if err != nil {
 				t.Fatalf("unexpected error %s while creating graph", err)
 			}

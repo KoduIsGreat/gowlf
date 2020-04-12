@@ -37,7 +37,7 @@ func gwlf(dbPath, query string, ap int) error {
 		return err
 	}
 	defer db.Close()
-	catchmentNetwork, err := toFromDb(db, query)
+	catchmentNetwork, err := fromDb(db, query)
 	if err != nil {
 		return err
 	}

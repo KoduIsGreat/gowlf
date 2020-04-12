@@ -91,7 +91,7 @@ func (n network) subNetwork(node int) network {
 }
 
 // creates a network from a *sql.DB provided a query
-func toFromDb(db *sql.DB, q string) (network, error) {
+func fromDb(db *sql.DB, q string) (network, error) {
 	network := make(network)
 	var from, to int
 	rows, err := db.Query(q)
@@ -103,7 +103,7 @@ func toFromDb(db *sql.DB, q string) (network, error) {
 		if err := rows.Scan(&from, &to); err != nil {
 			return nil, fmt.Errorf("error reading row: %w", err)
 		}
-		network.addEdges(to, from)
+		network.addEdges(from, to)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("error: %w", err)
