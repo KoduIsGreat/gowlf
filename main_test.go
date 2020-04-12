@@ -71,7 +71,7 @@ func TestPrint(t *testing.T) {
 			catchments.print(&out)
 			got := sortByNewLine(out.String())
 			want := sortByNewLine(tc.want)
-			if strings.Contains(want, "|"){
+			if strings.Contains(want, "|") {
 				split := strings.Split(want, "|")
 				var oneMatch bool
 				for _, want := range split {
@@ -129,14 +129,14 @@ C,D
 }
 
 func TestTranspose(t *testing.T) {
-	for _, tc := range[]struct{
+	for _, tc := range []struct {
 		name string
-		in string
+		in   string
 		want string
-	} {
+	}{
 		{
 			name: "Basic",
-			in: `0,1`,
+			in:   `0,1`,
 			want: "0 1\n1\n",
 		},
 	} {
@@ -156,7 +156,7 @@ func TestTranspose(t *testing.T) {
 			catchments.print(&out)
 			got := sortByNewLine(out.String())
 			want := sortByNewLine(tc.want)
-			if strings.Contains(want, "|"){
+			if strings.Contains(want, "|") {
 				split := strings.Split(want, "|")
 				var oneMatch bool
 				for _, want := range split {
@@ -187,7 +187,7 @@ func TestSubNetwork(t *testing.T) {
 2,3
 2,4
 `,
-			want:"\n0 1\n1 2\n2 3\n3",
+			want: "\n0 1\n1 2\n2 3\n3",
 		},
 		{
 			name: "CyclesBasic",
@@ -273,9 +273,9 @@ func TestSubNetwork(t *testing.T) {
 8,10
 9,10
 `,
-			want: "0 1\n1 2 3\n2 4\n3 4\n4 5\n5 6 7\n6 8\n7 9\n8 10\n9 10\n10|"+
-				"0 1\n1 2 3\n2 4\n3 4\n4 5\n5 7 6\n6 8\n7 9\n8 10\n9 10\n10|"+
-				"0 1\n1 3 2\n2 4\n3 4\n4 5\n5 6 7\n6 8\n7 9\n8 10\n9 10\n10|"+
+			want: "0 1\n1 2 3\n2 4\n3 4\n4 5\n5 6 7\n6 8\n7 9\n8 10\n9 10\n10|" +
+				"0 1\n1 2 3\n2 4\n3 4\n4 5\n5 7 6\n6 8\n7 9\n8 10\n9 10\n10|" +
+				"0 1\n1 3 2\n2 4\n3 4\n4 5\n5 6 7\n6 8\n7 9\n8 10\n9 10\n10|" +
 				"0 1\n1 3 2\n2 4\n3 4\n4 5\n5 7 6\n6 8\n7 9\n8 10\n9 10\n10",
 		},
 	} {
@@ -295,7 +295,7 @@ func TestSubNetwork(t *testing.T) {
 			subCatchments.print(&out)
 			got := sortByNewLine(out.String())
 			want := sortByNewLine(tc.want)
-			if strings.Contains(want, "|"){
+			if strings.Contains(want, "|") {
 				split := strings.Split(want, "|")
 				var oneMatch bool
 				for _, want := range split {

@@ -12,8 +12,9 @@ import (
 )
 
 var dbPath = flag.String("db", "./db/una.sqlite", "Path to database e.g : --db ./path/to/my/db.sqlite")
-var query = flag.String("q","SELECT fromcomid, tocomid FROM catchment_navigation;","a SQL query that returns an adjacency list")
+var query = flag.String("q", "SELECT fromcomid, tocomid FROM catchment_navigation;", "a SQL query that returns an adjacency list")
 var allpaths = flag.Int("ap", -1, "display all paths to the given node")
+
 func main() {
 
 	flag.Usage = func() {
@@ -25,7 +26,7 @@ func main() {
 	}
 }
 
-func gwlf(dbPath, query string, ap int) error{
+func gwlf(dbPath, query string, ap int) error {
 	var out bytes.Buffer
 	if dbPath == "" {
 		return fmt.Errorf("--db must be set")

@@ -25,10 +25,10 @@ func (n network) print(out *bytes.Buffer) {
 }
 
 // Prints the graph in Graphviz dot notation: https://www.graphviz.org/doc/info/lang.html
-func(n network) dotprint(out *bytes.Buffer) {
+func (n network) dotprint(out *bytes.Buffer) {
 	out.WriteString(fmt.Sprint("digraph {\n"))
 	for node, edges := range n {
-		for edge := range edges{
+		for edge := range edges {
 			e := fmt.Sprintf("\t%d -> %d\n", node, edge)
 			out.WriteString(e)
 		}
@@ -110,4 +110,3 @@ func toFromDb(db *sql.DB, q string) (network, error) {
 	}
 	return network, nil
 }
-
