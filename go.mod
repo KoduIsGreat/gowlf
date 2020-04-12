@@ -1,9 +1,8 @@
 module gwlf
 
-go 1.12
+go 1.13
 
 require (
-	github.com/DATA-DOG/go-sqlmock v1.3.3
-	github.com/mattn/go-sqlite3 v1.10.0
-	github.com/paulmach/go.geojson v1.4.0 // indirect
+	github.com/DATA-DOG/go-sqlmock v1.4.1
+	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 )
