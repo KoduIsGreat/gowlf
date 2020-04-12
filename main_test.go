@@ -24,7 +24,7 @@ func TestPrint(t *testing.T) {
 		{
 			name: "Simple",
 			in:   `0,1`,
-			want: "0 1\n1\n",
+			want: "0\n1 0\n",
 		},
 		{
 			name: "Basic",
@@ -32,7 +32,7 @@ func TestPrint(t *testing.T) {
 1,2
 2,3
 `,
-			want: "\n0 1\n1 2\n2 3\n3",
+			want: "0\n1 0\n2 1\n3 2\n",
 		},
 		{
 			name: "TwoPaths",
@@ -52,7 +52,7 @@ func TestPrint(t *testing.T) {
 1,2
 2,1
 `,
-			want: "0 1\n1 2\n2 1\n",
+			want: "0\n1 0 2\n2 1\n|0\n1 2 0\n2 1",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -63,12 +63,12 @@ func TestPrint(t *testing.T) {
 			defer db.Close()
 
 			out := bytes.Buffer{}
-			catchments, err := fromDB(db, tq)
+			catchments, err := toFromDb(db, tq)
 
 			if err != nil {
 				t.Fatalf("unexpected error %s while creating graph", err)
 			}
-			catchments.sprint(&out)
+			catchments.print(&out)
 			got := sortByNewLine(out.String())
 			want := sortByNewLine(tc.want)
 			if strings.Contains(want, "|"){
@@ -97,7 +97,7 @@ func TestNewGraph(t *testing.T) {
 	}{
 		{
 			name:    "BadRowType",
-			query:   &query,
+			query:   query,
 			err:     "error reading row",
 			columns: []string{"fromcomid", "tocomid"},
 			in: `A,B
@@ -121,8 +121,52 @@ C,D
 			}
 			defer db.Close()
 
-			if _, err := fromDB(db, tq); err == nil {
+			if _, err := toFromDb(db, tq); err == nil {
 				t.Fatalf("expected but did not receive fatal error: %s", tc.err)
+			}
+		})
+	}
+}
+
+func TestTranspose(t *testing.T) {
+	for _, tc := range[]struct{
+		name string
+		in string
+		want string
+	} {
+		{
+			name: "Basic",
+			in: `0,1`,
+			want: "0 1\n1\n",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			db, err := mockQuery([]string{"fromcomid", "tocomid"}, tq, tc.in)
+			if err != nil {
+				t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+			}
+			defer db.Close()
+
+			out := bytes.Buffer{}
+			catchments, err := toFromDb(db, tq)
+			if err != nil {
+				t.Fatalf("unexpected error %s while creating graph", err)
+			}
+			catchments = catchments.transpose()
+			catchments.print(&out)
+			got := sortByNewLine(out.String())
+			want := sortByNewLine(tc.want)
+			if strings.Contains(want, "|"){
+				split := strings.Split(want, "|")
+				var oneMatch bool
+				for _, want := range split {
+					oneMatch = got == want
+				}
+				if oneMatch {
+					t.Fatalf("Test failed: \n got %s \n\n want %s", got, want)
+				}
+			} else if got != want {
+				t.Fatalf("Test failed: \n got %s \n\n want %s", got, want)
 			}
 		})
 	}
@@ -236,19 +280,19 @@ func TestSubNetwork(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			db, err := mockQuery([]string{"fromcomid", "tocomid"}, query, tc.in)
+			db, err := mockQuery([]string{"fromcomid", "tocomid"}, tq, tc.in)
 			if err != nil {
 				t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 			}
 			defer db.Close()
 
 			out := bytes.Buffer{}
-			catchments, err := fromDB(db, tq)
+			catchments, err := toFromDb(db, tq)
 			if err != nil {
 				t.Fatalf("unexpected error %s while creating graph", err)
 			}
 			subCatchments := catchments.subNetwork(tc.to)
-			subCatchments.sprint(&out)
+			subCatchments.print(&out)
 			got := sortByNewLine(out.String())
 			want := sortByNewLine(tc.want)
 			if strings.Contains(want, "|"){

@@ -14,7 +14,7 @@ type network map[int]catchSet
 
 // Prints the graph in the form of textual words the first word is the ancestor node and any
 // words proceeding on the same line are its descendants
-func (n network) sprint(out *bytes.Buffer) {
+func (n network) print(out *bytes.Buffer) {
 	for node, edges := range n {
 		out.WriteString(fmt.Sprintf("%d", node))
 		for edge := range edges {
@@ -24,6 +24,7 @@ func (n network) sprint(out *bytes.Buffer) {
 	}
 }
 
+// Prints the graph in Graphviz dot notation: https://www.graphviz.org/doc/info/lang.html
 func(n network) dotprint(out *bytes.Buffer) {
 	out.WriteString(fmt.Sprint("digraph {\n"))
 	for node, edges := range n {
@@ -71,10 +72,9 @@ func (n network) subNetwork(node int) network {
 	seen := make(catchSet)
 	q := make([]int, 0)
 	q = append(q, node)
-	t := n.transpose()
 	visit := func(node int) {
 		if _, ok := seen[node]; !ok {
-			for edge := range t[node] {
+			for edge := range n[node] {
 				sub.addEdges(node, edge)
 				q = append(q, edge)
 			}
@@ -91,7 +91,7 @@ func (n network) subNetwork(node int) network {
 }
 
 // creates a network from a *sql.DB provided a query
-func fromDB(db *sql.DB, q string) (network, error) {
+func toFromDb(db *sql.DB, q string) (network, error) {
 	network := make(network)
 	var from, to int
 	rows, err := db.Query(q)
@@ -103,10 +103,11 @@ func fromDB(db *sql.DB, q string) (network, error) {
 		if err := rows.Scan(&from, &to); err != nil {
 			return nil, fmt.Errorf("error reading row: %w", err)
 		}
-		network.addEdges(from, to)
+		network.addEdges(to, from)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("error: %w", err)
 	}
 	return network, nil
 }
+
